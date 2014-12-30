@@ -23,7 +23,6 @@ import SocketServer
 import select
 from optparse import OptionParser
 import sys
-import threading
 
 
 class SocketRelay(object):
@@ -80,7 +79,31 @@ class TCPRelay(SocketServer.BaseRequestHandler):
             print "No device found"
             self.request.close()
             return
-        dev = mux.devices[0]
+
+        dev = None
+        if options.udid is None:
+            # Default to the first available device if no udid was specified
+            dev = mux.devices[0]
+        else:
+            index = 0
+            # Three attempts with a 1s timeout
+            while index < 3:
+                print "Devices:"
+                for available_dev in mux.devices:
+                    print available_dev
+                    # Look for the specified device udid
+                    if available_dev.serial == options.udid:
+                        dev = available_dev
+                        break
+                if dev:
+                    # Found it
+                    break
+                mux.process(timeout=1.0)
+                index += 1
+
+        if not dev:
+            raise Exception('Could not detect specified device udid')
+
         print "Connecting to device %s" % str(dev)
         dsock = mux.connect(dev, self.server.rport)
         lsock = self.request
@@ -111,6 +134,8 @@ parser.add_option("-b", "--bufsize", dest='bufsize', action='store', metavar='KI
                   help="specify buffer size for socket forwarding")
 parser.add_option("-s", "--socket", dest='sockpath', action='store', metavar='PATH', type='str', default=None,
                   help="specify the path of the usbmuxd socket")
+parser.add_option("-u", "--udid", dest='udid', action='store', metavar='UDID', type='str', default=None,
+                  help="specify the device's udid if multiple devices are connected")
 
 options, args = parser.parse_args()
 
