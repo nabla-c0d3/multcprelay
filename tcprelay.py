@@ -127,7 +127,7 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, TCPServer):
 
 HOST = "localhost"
 
-parser = OptionParser(usage="usage: %prog [OPTIONS] RemotePort[:LocalPort] [RemotePort[:LocalPort]]...")
+parser = OptionParser(usage="usage: %prog [OPTIONS] [Host:]RemotePort[:LocalPort] [RemotePort[:LocalPort]]...")
 parser.add_option("-t", "--threaded", dest='threaded', action='store_true', default=False,
                   help="use threading to handle multiple connections at once")
 parser.add_option("-b", "--bufsize", dest='bufsize', action='store', metavar='KILOBYTES', type='int', default=128,
@@ -153,8 +153,7 @@ for arg in args:
     try:
         if ':' in arg:
             rport, lport = arg.rsplit(":")
-            HOST, rport = rport.split(":") if len(rport.split(":")) > 1 else ("localhost", rport)
-            
+            if len(rport.split(":")) > 1: HOST, rport = rport.split(":")
             rport = int(rport)
             lport = int(lport)
             ports.append((rport, lport))
