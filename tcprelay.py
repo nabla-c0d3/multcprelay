@@ -124,7 +124,7 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, TCPServer):
     pass
 
 
-parser = OptionParser(usage="usage: %prog [OPTIONS] [Host:]RemotePort[:LocalPort] [RemotePort[:LocalPort]]...")
+parser = OptionParser(usage="usage: %prog [OPTIONS] [Host:]RemotePort[:LocalPort] [[Host:]RemotePort[:LocalPort]]...")
 parser.add_option("-t", "--threaded", dest='threaded', action='store_true', default=False,
                   help="use threading to handle multiple connections at once")
 parser.add_option("-b", "--bufsize", dest='bufsize', action='store', metavar='KILOBYTES', type='int', default=128,
