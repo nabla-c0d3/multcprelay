@@ -101,7 +101,7 @@ class TCPRelay(SocketServer.BaseRequestHandler):
                 index += 1
 
         if not dev:
-            raise Exception('Could not detect specified device udid')
+            raise Exception('Could not detect specified device udid: {0}'.format(repr(options.udid)))
 
         print "Connecting to device %s" % str(dev)
         dsock = mux.connect(dev, self.server.rport)
