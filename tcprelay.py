@@ -24,7 +24,6 @@ import select
 from optparse import OptionParser
 import sys
 
-
 class SocketRelay(object):
     def __init__(self, a, b, maxbuf=65535):
         self.a = a
@@ -152,7 +151,7 @@ ports = []
 for arg in args:
     try:
         if ':' in arg:
-            rport, lport = arg.rsplit(":")
+            rport, lport = arg.rsplit(":", 1)
             if len(rport.split(":")) > 1: HOST, rport = rport.split(":")
             rport = int(rport)
             lport = int(lport)
@@ -166,7 +165,7 @@ for arg in args:
 servers = []
 
 for rport, lport in ports:
-    print "Forwarding local port %d to remote port %d" % (lport, rport)
+    print "Forwarding local port {0}:{1} to remote port {2}".format(HOST, lport, rport)
     server = serverclass((HOST, lport), TCPRelay)
     server.rport = rport
     server.bufsize = options.bufsize
