@@ -152,7 +152,9 @@ ports = []
 for arg in args:
     try:
         if ':' in arg:
-            rport, lport = arg.split(":")
+            rport, lport = arg.rsplit(":")
+            HOST, rport = rport.split(":") if len(rport.split(":")) > 1 else ("localhost", rport)
+            
             rport = int(rport)
             lport = int(lport)
             ports.append((rport, lport))
