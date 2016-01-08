@@ -124,8 +124,6 @@ class ThreadedTCPServer(SocketServer.ThreadingMixIn, TCPServer):
     pass
 
 
-HOST = "localhost"
-
 parser = OptionParser(usage="usage: %prog [OPTIONS] [Host:]RemotePort[:LocalPort] [RemotePort[:LocalPort]]...")
 parser.add_option("-t", "--threaded", dest='threaded', action='store_true', default=False,
                   help="use threading to handle multiple connections at once")
@@ -152,21 +150,21 @@ for arg in args:
     try:
         if ':' in arg:
             rport, lport = arg.rsplit(":", 1)
-            if len(rport.split(":")) > 1: HOST, rport = rport.split(":")
+            host, rport = rport.split(":") if len(rport.split(":")) > 1 else ("localhost", rport)
             rport = int(rport)
             lport = int(lport)
-            ports.append((rport, lport))
+            ports.append((host, rport, lport))
         else:
-            ports.append((int(arg), int(arg)))
+            ports.append(("localhost", int(arg), int(arg)))
     except:
         parser.print_help()
         sys.exit(1)
 
 servers = []
 
-for rport, lport in ports:
-    print "Forwarding local port {0}:{1} to remote port {2}".format(HOST, lport, rport)
-    server = serverclass((HOST, lport), TCPRelay)
+for host, rport, lport in ports:
+    print "Forwarding local port {0}:{1} to remote port {2}".format(host, lport, rport)
+    server = serverclass((host, lport), TCPRelay)
     server.rport = rport
     server.bufsize = options.bufsize
     servers.append(server)
