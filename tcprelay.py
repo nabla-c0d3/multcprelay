@@ -89,13 +89,14 @@ class TCPRelay(SocketServer.BaseRequestHandler):
 
             while True:
                 mux.process(timeout = 1.0)
-                print "Devices:\n{0}".format("\n".join([available_dev for available_dev in mux.devices]))
+                print "Devices:\n{0}".format("\n".join([str(available_dev) for available_dev in mux.devices]))
 
                 #check if amount of devices from mux is the same as it was previously
                 if len(mux.devices) == lastLength:
                     #scan 3 more times just to make sure
                     for _ in xrange(3):
                         mux.process(timeout = 1.0)
+                        print "Last # of devices: {0} | Current # of devices: {1}".format(lastLength, len(mux.devices))
 
                     #if it's still the same, we can go ahead and stop the loop
                     if len(mux.devices) == lastLength:
