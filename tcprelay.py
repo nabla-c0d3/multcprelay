@@ -23,14 +23,15 @@ import SocketServer
 import select
 from optparse import OptionParser
 import sys
+import traceback
 
 class SocketRelay(object):
-    def __init__(self, a, b, maxbuf=65535):
+    def __init__(self, a, b, maxBuffer = 65535):
         self.a = a
         self.b = b
         self.atob = ""
         self.btoa = ""
-        self.maxbuf = maxbuf
+        self.maxBuffer = maxBuffer
 
     def handle(self):
         while True:
@@ -41,9 +42,9 @@ class SocketRelay(object):
                 wlist.append(self.b)
             if self.btoa:
                 wlist.append(self.a)
-            if len(self.atob) < self.maxbuf:
+            if len(self.atob) < self.maxBuffer:
                 rlist.append(self.a)
-            if len(self.btoa) < self.maxbuf:
+            if len(self.btoa) < self.maxBuffer:
                 rlist.append(self.b)
             rlo, wlo, xlo = select.select(rlist, wlist, xlist)
             if xlo:
@@ -55,12 +56,12 @@ class SocketRelay(object):
                 n = self.b.send(self.atob)
                 self.atob = self.atob[n:]
             if self.a in rlo:
-                s = self.a.recv(self.maxbuf - len(self.atob))
+                s = self.a.recv(self.maxBuffer - len(self.atob))
                 if not s:
                     return
                 self.atob += s
             if self.b in rlo:
-                s = self.b.recv(self.maxbuf - len(self.btoa))
+                s = self.b.recv(self.maxBuffer - len(self.btoa))
                 if not s:
                     return
                 self.btoa += s
@@ -69,7 +70,7 @@ class SocketRelay(object):
 
 class TCPRelay(SocketServer.BaseRequestHandler):
     def handle(self):
-        print "Incoming connection to %d" % self.server.server_address[1]
+        print "Incoming connection to {0}".format(self.server.server_address[1])
         mux = usbmux.USBMux(options.sockpath)
         print "Waiting for devices..."
         if not mux.devices:
@@ -97,18 +98,18 @@ class TCPRelay(SocketServer.BaseRequestHandler):
                 if dev:
                     # Found it
                     break
-                mux.process(timeout=1.0)
+                mux.process(timeout = 1.0)
                 index += 1
 
         if not dev:
             raise Exception('Could not detect specified device udid: {0}'.format(repr(options.udid)))
 
-        print "Connecting to device %s" % str(dev)
-        dsock = mux.connect(dev, self.server.rport)
+        print "Connecting to device {0}".format(dev)
+        dsock = mux.connect(dev, self.server.remotePort)
         lsock = self.request
         print "Connection established, relaying data"
         try:
-            fwd = SocketRelay(dsock, lsock, self.server.bufsize * 1024)
+            fwd = SocketRelay(dsock, lsock, self.server.bufferSize * 1024)
             fwd.handle()
         finally:
             dsock.close()
@@ -136,9 +137,7 @@ parser.add_option("-u", "--udid", dest='udid', action='store', metavar='UDID', t
 
 options, args = parser.parse_args()
 
-serverclass = TCPServer
-if options.threaded:
-    serverclass = ThreadedTCPServer
+serverClass = ThreadedTCPServer if options.threaded else TCPServer
 
 if len(args) == 0:
     parser.print_help()
@@ -149,11 +148,11 @@ ports = []
 for arg in args:
     try:
         if ':' in arg:
-            rport, lport = arg.rsplit(":", 1)
-            host, rport = rport.split(":") if len(rport.split(":")) > 1 else ("localhost", rport)
-            rport = int(rport)
-            lport = int(lport)
-            ports.append((host, rport, lport))
+            remotePort, localPort = arg.rsplit(":", 1)
+            host, remotePort = remotePort.split(":") if len(remotePort.split(":")) > 1 else ("localhost", remotePort)
+            remotePort = int(remotePort)
+            localPort = int(localPort)
+            ports.append((host, remotePort, localPort))
         else:
             ports.append(("localhost", int(arg), int(arg)))
     except:
@@ -162,11 +161,11 @@ for arg in args:
 
 servers = []
 
-for host, rport, lport in ports:
-    print "Forwarding local port {0}:{1} to remote port {2}".format(host, lport, rport)
-    server = serverclass((host, lport), TCPRelay)
-    server.rport = rport
-    server.bufsize = options.bufsize
+for host, remotePort, localPort in ports:
+    print "Forwarding local port {0}:{1} to remote port {2}".format(host, localPort, remotePort)
+    server = serverClass((host, localPort), TCPRelay)
+    server.remotePort = remotePort
+    server.bufferSize = options.bufsize
     servers.append(server)
 
 alive = True
@@ -177,4 +176,5 @@ while alive:
         for server in rl:
             server.handle_request()
     except:
+        traceback.print_exc()
         alive = False
