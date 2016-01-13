@@ -71,11 +71,9 @@ class SocketRelay(object):
 class TCPRelay(SocketServer.BaseRequestHandler):
     def handle(self):
         print "Incoming connection to {0}".format(self.server.server_address[1])
-        mux = usbmux.USBMux(options.sockpath)
+
         print "Waiting for devices..."
-        if not mux.devices:
-            mux.process(0.1)
-        if not mux.devices:
+        if len(self.server.devices) == 0:
             print "No device found"
             self.request.close()
             return
@@ -83,23 +81,12 @@ class TCPRelay(SocketServer.BaseRequestHandler):
         dev = None
         if options.udid is None:
             # Default to the first available device if no udid was specified
-            dev = mux.devices[0]
+            dev = self.server.devices[0]
         else:
-            lastLength = len(mux.devices)
-
-            while True:
-                mux.process(timeout = 0.1)
-
-                #check if amount of devices from mux is the same as it was previously
-                if len(mux.devices) == lastLength: break
-
-                lastLength = len(mux.devices)
-
-            print "Devices:\n{0}".format("\n".join([str(available_dev) for available_dev in mux.devices]))
-            for available_dev in mux.devices:
+            for device in self.server.devices:
                 # Look for the specified device UDID
-                if available_dev.serial == options.udid:
-                    dev = available_dev
+                if device.serial == options.udid:
+                    dev = device
                     break
 
         if not dev:
@@ -146,6 +133,20 @@ if len(args) == 0:
 
 ports = []
 
+
+mux = usbmux.USBMux(options.sockpath)
+print "Waiting for devices..."
+mux.process(0.1)
+lastLength = len(mux.devices)
+
+while True:
+    mux.process(0.1)
+    if len(mux.devices) == lastLength: break
+    lastLength = len(mux.devices)
+
+devices = mux.devices
+print "Devices:\n{0}".format("\n".join([str(d) for d in devices]))
+
 for arg in args:
     try:
         if ':' in arg:
@@ -167,6 +168,7 @@ for host, remotePort, localPort in ports:
     server = serverClass((host, localPort), TCPRelay)
     server.remotePort = remotePort
     server.bufferSize = options.bufsize
+    server.devices = devices
     servers.append(server)
 
 alive = True
