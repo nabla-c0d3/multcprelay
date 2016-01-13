@@ -85,24 +85,30 @@ class TCPRelay(SocketServer.BaseRequestHandler):
             # Default to the first available device if no udid was specified
             dev = mux.devices[0]
         else:
-            index = 0
-            # Three attempts with a 1s timeout
-            while index < 3:
-                print "Devices:"
-                for available_dev in mux.devices:
-                    print available_dev
-                    # Look for the specified device udid
-                    if available_dev.serial == options.udid:
-                        dev = available_dev
-                        break
-                if dev:
-                    # Found it
-                    break
+            lastLength, hasAll = len(mux.devices), False
+
+            while not hasAll:
                 mux.process(timeout = 1.0)
-                index += 1
+                print "Devices:\n{0}".format("\n".join([available_dev for available_dev in mux.devices]))
+
+                #check if amount of devices from mux is the same as it was previously
+                if len(mux.devices) == lastLength:
+                    #scan 3 more times just to make sure
+                    for _ in xrange(3):
+                        mux.process(timeout = 1.0)
+
+                    #if it's still the same, we can go ahead and stop the loop
+                    if len(mux.devices) == lastLength:
+                        hasAll = True
+
+            for available_dev in mux.devices:
+                # Look for the specified device UDID
+                if available_dev.serial == options.udid:
+                    dev = available_dev
+                    break
 
         if not dev:
-            raise Exception('Could not detect specified device udid: {0}'.format(repr(options.udid)))
+            raise Exception("Could not detect specified device UDID: {0}".format(repr(options.udid)))
 
         print "Connecting to device {0}".format(dev)
         dsock = mux.connect(dev, self.server.remotePort)
