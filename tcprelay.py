@@ -74,7 +74,7 @@ class TCPRelay(SocketServer.BaseRequestHandler):
         mux = usbmux.USBMux(options.sockpath)
         print "Waiting for devices..."
         if not mux.devices:
-            mux.process(1.0)
+            mux.process(0.1)
         if not mux.devices:
             print "No device found"
             self.request.close()
@@ -88,22 +88,14 @@ class TCPRelay(SocketServer.BaseRequestHandler):
             lastLength = len(mux.devices)
 
             while True:
-                mux.process(timeout = 1.0)
-                print "Devices:\n{0}".format("\n".join([str(available_dev) for available_dev in mux.devices]))
+                mux.process(timeout = 0.1)
 
                 #check if amount of devices from mux is the same as it was previously
-                if len(mux.devices) == lastLength:
-                    #scan 3 more times just to make sure
-                    for _ in xrange(3):
-                        mux.process(timeout = 1.0)
-                        print "Last # of devices: {0} | Current # of devices: {1}".format(lastLength, len(mux.devices))
-
-                    #if it's still the same, we can go ahead and stop the loop
-                    if len(mux.devices) == lastLength:
-                        break
+                if len(mux.devices) == lastLength: break
 
                 lastLength = len(mux.devices)
 
+            print "Devices:\n{0}".format("\n".join([str(available_dev) for available_dev in mux.devices]))
             for available_dev in mux.devices:
                 # Look for the specified device UDID
                 if available_dev.serial == options.udid:
