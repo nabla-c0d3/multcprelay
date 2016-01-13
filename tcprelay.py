@@ -85,9 +85,9 @@ class TCPRelay(SocketServer.BaseRequestHandler):
             # Default to the first available device if no udid was specified
             dev = mux.devices[0]
         else:
-            lastLength, hasAll = len(mux.devices), False
+            lastLength = len(mux.devices)
 
-            while not hasAll:
+            while True:
                 mux.process(timeout = 1.0)
                 print "Devices:\n{0}".format("\n".join([available_dev for available_dev in mux.devices]))
 
@@ -99,7 +99,9 @@ class TCPRelay(SocketServer.BaseRequestHandler):
 
                     #if it's still the same, we can go ahead and stop the loop
                     if len(mux.devices) == lastLength:
-                        hasAll = True
+                        break
+
+                lastLength = len(mux.devices)
 
             for available_dev in mux.devices:
                 # Look for the specified device UDID
