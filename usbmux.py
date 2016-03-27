@@ -70,8 +70,7 @@ class MuxDevice(object):
         self.location = location
 
     def __str__(self):
-        return "<MuxDevice: ID %d ProdID 0x%04x Serial '%s' Location 0x%x>" % (
-            self.devid, self.usbprod, self.serial, self.location)
+        return "<MuxDevice: ID {0} ProdID 0x{1:04x} Serial '{2}' Location 0x{3:x}>".format(self.devid, self.usbprod, self.serial, self.location)
 
 
 class BinaryProtocol(object):
